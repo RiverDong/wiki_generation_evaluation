@@ -17,6 +17,7 @@ from gensim.models import KeyedVectors
 from keras.models import load_model
 from sentence_transformers import SentenceTransformer, util
 from transformers import T5Tokenizer, T5ForConditionalGeneration, BartForConditionalGeneration, BartTokenizer, GPT2LMHeadModel, GPT2Tokenizer, GPTNeoForCausalLM
+from constants import *
 
 ## CONSTANTS
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -31,9 +32,9 @@ class generator:
         self.top_p = args.top_p
         self.top_k = args.top_k
         self.temperature = args.temperature
-        self.num_return_sequences = 2
-        self.max_length = 300
-        wiki_timestamp = 'new' if 'new' in args.prompt else 'old'
+        self.num_return_sequences = args.num_return_sequences
+        self.max_length = args.max_length
+        self.wiki_timestamp = 'new' if 'new' in args.prompt else 'old'
         output_file_name = model_name + '_top-p_' + str(self.top_p) + '_top-k_' + str(self.top_k) + '_temp_' + str(self.temperature) + '_' + self.wiki_timestamp + '.json'
         self.out_file_path = os.path.join(args.output_dir, output_file_name)
         openai.key = args.openai_key
@@ -165,9 +166,6 @@ class generator:
                 f.write(json.dumps(dic) + "\n")
 
 def get_model_list(model_name):
-    ## model_name_list = ['gpt3_curie', 'gpt3_davinci', 'gpt3_ft', 'gpt2', 'gpt2_ft', 'bart_ft', 't5_ft', 'gpt_neo', 'gpt_neo_ft', 'opt', 'opt_ft', 'adv_gpt2']
-    ## What's left: gpt2_ft, gpt_neo_ft, opt, opt_ft, adv_gpt2
-    model_name_list = ['gpt3_curie', 'gpt3_davinci', 'gpt3_ft', 'gpt2', 'bart_ft', 't5_ft', 'gpt_neo']
     if model_name == 'all':
         return model_name_list
     elif model_name == 'all_free':
@@ -179,7 +177,7 @@ def get_model_list(model_name):
 
 def parse_title(file_name):
     # eg: gpt3_ft_top-p_2_top-k_2_temp_2_new.json
-    model, top_p, top_k, temperature = file_name.rstrip('.json').replace('_top-p_', '|').replace('_top-k_', '|').replace('_temp_', '|').split('|')
+    model, top_p, top_k, temperature = file_name.rstrip('.json').replace('_top-p_', '|').replace('_top-k_', '|').replace('_temp_', '|').replace('_new', '').replace('_old', '').split('|')
     wiki_timestamp = 'new' if 'new' in file_name else 'old'
     return model, top_p, top_k, temperature, wiki_timestamp
 
@@ -550,3 +548,91 @@ def copy_all_generation_file(root_path, new_dir):
                     command = 'cp {file_path} {output_path}'.format(file_path = file_path, output_path = output_path)
                     os.system(command)
                     
+def opt():
+    from transformers import OPTModel, OPTConfig
+    configuration = OPTConfig()
+    model = OPTModel(configuration)
+    configuration = model.config
+    from transformers import GPT2Tokenizer, OPTModel
+    tokenizer = GPT2Tokenizer.from_pretrained("facebook/opt-350m")
+    model = OPTModel.from_pretrained("facebook/opt-350m")
+    prompt = "Hey, are you consciours? Can you talk to me?"
+    inputs = tokenizer(prompt, return_tensors="pt")
+    
+    generate_ids = model.generate(inputs.input_ids, max_length=30)
+    generation = tokenizer.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
+    print(generation)
+
+
+def get_command(top_p, top_k, temperature, model, input_path, output_dir):
+    command = '''#!/bin/bash
+#
+#SBATCH --job-name=generation
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=16
+#SBATCH --time=24:00:00
+#SBATCH --mem=32GB
+#SBATCH --gres=gpu:1
+
+if [[ "$(hostname -s)" =~ ^g[r,v] ]]; then nv="--nv"; fi
+
+cd /scratch/yd2481
+singularity exec $nv \
+--bind /vast/yd2481/cache:$HOME/.cache --overlay overlay-50G-10M.ext3:ro \
+/scratch/work/public/singularity/centos-7.8.2003.sif \
+/bin/bash -c "
+source /ext3/env.sh
+conda activate eval
+cd /scratch/$USER/NLG_evaluation
+python /scratch/yd2481/NLG_evaluation/main.py -g -m {model} -p {input_path} --top_p {top_p} --top_k {top_k} --temperature {temperature} -o {output_dir}
+"
+    '''.format(top_p = top_p, top_k = top_k, temperature = temperature, model = model, input_path = input_path, output_dir = output_dir)
+    return command
+
+def GPT2_ablation_top_p(wiki_prompt_dict, output_dir):
+    model = 'gpt2'
+    top_k = 50
+    idx = 0
+    task_name = 'GPT2_ablation_top_p'
+    
+    for input_path in wiki_prompt_dict.values():
+        for temperature in temperature_list:
+            for top_p in top_p_list:
+                idx += 1
+                command = get_command(top_p, top_k, temperature, model, input_path, output_dir)
+                output_file_path = os.path.join(output_dir, task_name + '_' + str(idx)+ '.s')
+                print(output_file_path)
+                with open(output_file_path, 'w') as f:
+                    f.write(command)
+
+def GPT2_ablation_top_k(wiki_prompt_dict, output_dir):
+    model = 'gpt2'
+    top_p = 1
+    idx = 0
+    task_name = 'GPT2_ablation_top_k'
+
+    for input_path in wiki_prompt_dict.values():
+        for temperature in temperature_list:
+            for top_k in top_k_list:
+                idx += 1
+                command = get_command(top_p, top_k, temperature, model, input_path, output_dir)
+                output_file_path = os.path.join(output_dir, task_name + '_' + str(idx)  + '.s')
+                print(output_file_path)
+                with open(output_file_path, 'w') as f:
+                    f.write(command)
+
+def all_models(wiki_prompt_dict, output_dir):
+    temperature=0.9,
+    top_p=1,
+    top_k = 50
+    idx = 0
+    task_name = 'all_models_generation'
+
+    for model in model_name_list:
+        for input_path in wiki_prompt_dict.values():
+            idx += 1
+            command = get_command(top_p, top_k, temperature, model, input_path, output_dir)
+            output_file_path = os.path.join(output_dir, task_name + '_' + str(idx)  + '.s')
+            print(output_file_path)
+            with open(output_file_path, 'w') as f:
+                f.write(command)

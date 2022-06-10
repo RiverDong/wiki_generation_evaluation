@@ -1,0 +1,25 @@
+certifi==2021.10.8
+commonmark==0.9.1
+cycler==0.11.0
+en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.3.0/en_core_web_sm-3.3.0-py3-none-any.whl
+fonttools==4.32.0
+ipywidgets==7.7.0
+jupyterlab-widgets==1.1.0
+kiwisolver==1.4.2
+matplotlib==3.5.1
+numpy==1.22.3
+pandarallel==1.6.1
+pandas==1.4.2
+psutil==5.9.0
+pyphen==0.12.0
+python-dateutil==2.8.2
+pytz==2022.1
+rich==12.2.0
+scipy==1.8.0
+six==1.16.0
+spacy==3.3.0
+splitstream==1.2.4
+torch==1.11.0
+torchaudio==0.11.0+cu113
+typing_extensions==4.1.1
+widgetsnbextension==3.6.0
