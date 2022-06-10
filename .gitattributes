@@ -1,3 +1,13 @@
+<<<<<<< HEAD
 *.csv filter=lfs diff=lfs merge=lfs -text
 *.json filter=lfs diff=lfs merge=lfs -text
 *.bin filter=lfs diff=lfs merge=lfs -text
+=======
+*.psd filter=lfs diff=lfs merge=lfs -text
+t5/ filter=lfs diff=lfs merge=lfs -text
+bart/ filter=lfs diff=lfs merge=lfs -text
+op/ filter=lfs diff=lfs merge=lfs -text
+opt/ filter=lfs diff=lfs merge=lfs -text
+essay_scoring/ filter=lfs diff=lfs merge=lfs -text
+gen*/ filter=lfs diff=lfs merge=lfs -text
+>>>>>>> dc3086a0dd1cd385f16cb31a0dd7ded148fb22cf
