@@ -1,0 +1,7 @@
+*.psd filter=lfs diff=lfs merge=lfs -text
+t5/ filter=lfs diff=lfs merge=lfs -text
+bart/ filter=lfs diff=lfs merge=lfs -text
+op/ filter=lfs diff=lfs merge=lfs -text
+opt/ filter=lfs diff=lfs merge=lfs -text
+essay_scoring/ filter=lfs diff=lfs merge=lfs -text
+gen*/ filter=lfs diff=lfs merge=lfs -text

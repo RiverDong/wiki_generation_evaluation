@@ -18,6 +18,8 @@ def get_args_parser():
 
     parser.add_argument('-o', '--output_dir', default = './generation', type=str)
     parser.add_argument('-n', '--num_prompt', default = 2000, type=int)
+    parser.add_argument('--num_return_sequences', default = 20, type=int)
+    parser.add_argument('--max_length', default = 400, type=int)
     parser.add_argument('-m', '--model_name_list', default = 'all_free', type=str, 
             help = 'all_free generates for all except gpt3, all generates for all including gpt3, can also specify')
 
@@ -49,12 +51,14 @@ def evaluation(args):
         print('start evaluating' + generation_file)
         eval_one_file(args, generation_file)
     
+def combine_df(dir):    
     combined_df = pd.DataFrame()
-    for generation_file in os.listdir(args.output_dir):
+    for generation_file in os.listdir(dir):
         if generation_file.endswith('csv'):
-            df = pd.read_csv(generation_file)
+            print(generation_file)
+            df = pd.read_csv(os.path.join(dir, generation_file))
             combined_df = pd.concat([combined_df, df])
-    output_path = os.path.join(args.output_dir, 'final_generation.csv')
+    output_path = os.path.join(dir, 'final_generation.csv')
     combined_df.to_csv(output_path)
 
 
