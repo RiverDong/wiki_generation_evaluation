@@ -1,4 +1,4 @@
-# Automatic Evaluation Metrics of Knowledge-intensive LongText Generation
+# Automatic Evaluation Metrics of Knowledge-intensive Long Text Generation
 
 ## Setup
 ```
